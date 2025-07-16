@@ -89,10 +89,3 @@ lsmod | grep thunderbolt
 
 
 
-
-
-
-
-
-
-询问 ChatGPT
