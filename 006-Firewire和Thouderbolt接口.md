@@ -89,3 +89,43 @@ lsmod | grep thunderbolt
 
 
 
+## PCIE 系列标准
+---
+
+<img width="1153" height="422" alt="image" src="https://github.com/user-attachments/assets/7e6f5976-340c-4c67-be02-c9b4a0b2f2b3" />
+
+
+
+## Thunerbolt 与 雷电接口一致
+---
+
+中文语句中的“雷电4接口”就是 Thunderbolt 4（英文）接口的对应名称，它们指的是同一个技术标准。
+
+
+### 对应关系一览
+
+<img width="1096" height="260" alt="image" src="https://github.com/user-attachments/assets/9204795b-e09f-44d0-983d-a2577d62694b" />
+
+
+### 雷电4接口特性
+
+
+<img width="1073" height="507" alt="image" src="https://github.com/user-attachments/assets/72c0105f-cf6a-4ad5-86eb-03b8344571e5" />
+
+
+### 雷电4 与 USB4 对比关系
+
+       ┌───────────────┐
+       │  USB-C 外形   │◄──── 所有雷电3/4接口都采用
+       └───────────────┘
+              ▲
+              │
+ ┌──────────────────────────────┐
+ │ Thunderbolt 3               │◄─► 最高40Gbps，部分实现不完整
+ ├──────────────────────────────┤
+ │ Thunderbolt 4（=雷电4）      │◄─► 完整强制规范，兼容雷电3与USB4
+ ├──────────────────────────────┤
+ │ USB4                         │◄─► 基于雷电3协议开放的标准
+ └──────────────────────────────┘
+
+Intel 推出的高速传输和多功能扩展接口，用于笔记本电脑、显示器、扩展坞、eGPU 等现代外设，使用的是 USB-C 接口形状，但功能远比普通 USB-C 更强大。
