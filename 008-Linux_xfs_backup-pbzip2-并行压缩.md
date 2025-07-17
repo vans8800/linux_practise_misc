@@ -127,7 +127,7 @@ lvextend -L +300G /dev/loongnix-server/root
 xfs_growfs /dev/loongnix-server/root
 ```
 
-**可能会遇到下面的问题**
+### **可能会遇到下面的问题**
 
 <img width="1063" height="84" alt="image" src="https://github.com/user-attachments/assets/fee0167b-6d6c-46dc-a969-d63e0a85720d" />
 
@@ -142,7 +142,7 @@ Insufficient free space: 76800 extents needed, but only 76799 available
 ​​
 vgs命令显示：loongnix-server VFree: <300.00g这个 ​​"<"符号​​ 表示实际可用空间略小于300GB（约299.996GB），无法满足精确的300GB扩容需求。
 
-**解决方案**
+### **解决方案**
 
 **方案一**
 
