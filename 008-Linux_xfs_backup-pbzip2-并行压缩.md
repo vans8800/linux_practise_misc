@@ -26,7 +26,7 @@ tar -cf - /path/to/directory | pbzip2 -p4 > output.tar.bz2
 
 -  tar -cf -：将目录打包到标准输出（不生成临时 .tar文件）。
 -  pbzip2 -p4：启用4线程压缩（-p后接线程数，按CPU核心数调整）。
--  > output.tar.bz2：将结果重定向到目标文件
+-  output.tar.bz2：将结果重定向到目标文件
 
 
 ```bash
