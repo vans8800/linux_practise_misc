@@ -1,4 +1,3 @@
-
 PCIe 设备的 Class ID 和 BDF（Bus:Device.Function） 是两个概念，它们分别描述设备的类型和设备在系统中的位置，虽然没有直接依赖关系，但在 PCI 枚举和驱动绑定过程中都非常重要。
 
 ## ✅ 一、Class ID 是什么？
@@ -21,8 +20,6 @@ Class ID（或称 Class Code） 是用于描述 PCI/PCIe 设备“是什么类�
 
 <img width="899" height="307" alt="image" src="https://github.com/user-attachments/assets/fc072564-9e1e-463f-b8a7-dc54511e68e8" />
 
-
-<img width="827" height="275" alt="image" src="https://github.com/user-attachments/assets/dbc85774-e20f-4e05-895e-fc4e205f7fc8" />
 
 🟠 如果 class 为 0x000000，表示设备未声明类型，系统可能不会自动分配资源或加载驱动。
 
@@ -47,17 +44,16 @@ BDF = Bus Number : Device Number : Function Number
 ## ✅ 三、它们之间有什么关系？
 ---
 
-
 <img width="1019" height="323" alt="image" src="https://github.com/user-attachments/assets/d5977afa-17b5-42a8-9c5f-53af462e589c" />
-
-
 
 ## ✅ 四、举个例子说明
 ---
 
 在 lspci 中看到：
 
+```bash
 0b:00.0 Non-VGA unclassified device [0000]: Synopsys DWC_usb3
+```
 
 BDF = 0b:00.0 → 它在 11 号总线的 0 号设备 0 号功能上
 
@@ -142,6 +138,12 @@ lspci | cut -d' ' -f1 | cut -d':' -f1 | sort | uniq
 ```
 
 说明你当前系统只有一个 PCI domain。
+
+```bash
+[root@host1 loongson]# lspci | cut -d ' ' -f1  | cut -d ':' -f1 | sort -u
+0000
+0001
+```
 
 ✅ 总结
 
