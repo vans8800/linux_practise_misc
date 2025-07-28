@@ -180,31 +180,26 @@ RC1 (Domain 0001) ──> Bus 00 ─> Device B
 ### ✅ 二、如何在 sysfs 中查找某个设备属于哪个 RC
 
 ✴️ 方法一：通过 ls -l 找出其父设备
-假设你要查的设备是：
+假设你要查的设备是：0000:0b:00.0 可以执行：
 
-makefile
-复制
-编辑
-0000:0b:00.0
-可以执行：
+```bash
 
-bash
-复制
-编辑
 cd /sys/bus/pci/devices/0000:0b:00.0
 readlink -f ../0000:0b:00.0
+```
+
 或者更简单的：
 
-bash
-复制
-编辑
+```bash
+
 tree -L 3 /sys/bus/pci/devices/0000:0b:00.0
+```
 你将看到如下路径：
 
-swift
-复制
-编辑
+```swift
 /sys/bus/pci/devices/0000:0b:00.0 -> ../../devices/pci0000:00/0000:00:01.0/0000:0b:00.0
+```
+
 此处路径说明：
 
 pci0000:00 是一个 PCI Root Complex（Domain 0000, Bus 00）
@@ -216,16 +211,17 @@ pci0000:00 是一个 PCI Root Complex（Domain 0000, Bus 00）
 结论：0000:0b:00.0 属于 /sys/devices/pci0000:00/ 控制的 RC
 
 ✴️ 方法二：直接定位 RC 总线节点
-bash
-复制
-编辑
-find /sys/devices -name "0000:0b:00.0"
-你可能看到完整路径：
 
-swift
-复制
-编辑
+```bash
+find /sys/devices -name "0000:0b:00.0"
+```
+
+可能看到完整路径：
+
+```bash
 /sys/devices/pci0000:00/0000:00:01.0/0000:0b:00.0
+```
+
 说明：
 
 pci0000:00 是 RC 控制器所在
@@ -235,31 +231,27 @@ pci0000:00 是 RC 控制器所在
 0000:0b:00.0 是你插入的设备
 
 ✅ 三、如何列出所有 PCIe RC 设备？
-bash
-复制
-编辑
-ls -d /sys/devices/pci0000:*/ | sort
-例如：
 
-swift
-复制
-编辑
+```bash
+ls -d /sys/devices/pci0000:*/ | sort
+```
+
+```bash 
 /sys/devices/pci0000:00/
 每个 pci0000:XX/ 目录表示一个独立 RC（PCI Domain = XX）
+```
 
 ✅ 四、结合 lspci 查看拓扑结构
-bash
-复制
-编辑
-lspci -tv
-输出类似：
 
-css
-复制
-编辑
+```bash
+
+lspci -tv
+
 -[0000:00]-
         +-00.0
         +-01.0-[0b]----00.0  <-- 你关心的设备
+```
+
 其中：
 
 [0000:00] 是 RC 控制的 Root Bus
@@ -269,15 +261,13 @@ css
 00.0 是设备挂载位置
 
 ✅ Bonus：查看 RC 使用的驱动/资源
+
 你也可以看看 RC 驱动加载情况：
 
-bash
-复制
-编辑
-lspci -s 00:00.0 -k
-或
+```bash
 
-bash
-复制
-编辑
+lspci -s 00:00.0 -k
+
 ls -l /sys/bus/pci/devices/0000:00:00.0/driver
+```
+
