@@ -187,6 +187,8 @@ filter  表中的规则可以被哪些链使用：INPUT，FORWARD，OUTPUT
 
 下图中nat表在centos7中的情况就不再标明。
 
+<img width="576" height="276" alt="image" src="https://github.com/user-attachments/assets/b8e96c3d-30db-487f-ad47-fe039eb6af2f" />
+
  
 ## 规则的概念
 ---
