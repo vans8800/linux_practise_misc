@@ -103,3 +103,145 @@ netfilter才是真正的防火墙，它是内核的一部分，所有进出的�
 ## 表链关系
 ---
 
+prerouting”链”上的规则都存在于哪些表（暂时忽略表的顺序）中。
+
+<img width="237" height="577" alt="image" src="https://github.com/user-attachments/assets/b240fdb2-0c48-4ff1-95e2-5e12f1fa92bd" />
+
+prerouting”链”只拥有nat表、raw表和mangle表所对应的功能，故，prerouting中的规则只能存放于nat表、raw表和mangle表中。
+
+### 链（钩子） <–>  表（功能） ：
+
+PREROUTING 的规则可以存在于：  raw表，mangle表，nat表。
+
+INPUT 的规则可以存在于：  mangle表，filter表，（centos7中还有nat表，centos6中没有）。
+
+FORWARD 的规则可以存在于：  mangle表，filter表。
+
+OUTPUT 的规则可以存在于：  raw表mangle表，nat表，filter表。
+
+POSTROUTING 的规则可以存在于：  mangle表，nat表。
+
+实际的使用过程中，往往是通过”表”作为操作入口，对规则进行定义。
+
+### 表（功能）<–>   链（钩子）：
+
+raw     表中的规则可以被哪些链使用：PREROUTING，OUTPUT
+
+mangle  表中的规则可以被哪些链使用：PREROUTING，INPUT，FORWARD，OUTPUT，POSTROUTING
+
+nat     表中的规则可以被哪些链使用：PREROUTING，OUTPUT，POSTROUTING（centos7中还有INPUT，centos6中没有）
+
+filter  表中的规则可以被哪些链使用：INPUT，FORWARD，OUTPUT
+
+数据包经过一个”链”的时候，会将当前链的所有规则都匹配一遍，但是匹配时总归要有顺序，应该一条一条的去匹配，相同功能类型的规则会汇聚在一张”表”中，那么，哪些”表”中的规则会放在”链”的最前面执行呢，此时就需要有一个优先级的问题，还拿prerouting”链”做图示。
+
+<img width="259" height="573" alt="image" src="https://github.com/user-attachments/assets/b41867df-e6e2-4b6a-91e6-d3fd44123c85" />
+
+prerouting链中的规则存放于三张表中，而这三张表中的规则执行的优先级如下：
+
+raw –> mangle –> nat
+
+iptables为我们定义了4张”表”,当他们处于同一条”链”时，执行的优先级如下。
+
+优先级次序（由高而低）：
+
+raw –> mangle –> nat –> filter
+
+4张表中的规则处于同一条链的目前只有output链，它就是传说中海陆空都能防守的关卡。
+
+为了更方便的管理，还可以在某个表里面创建自定义链，将针对某个应用程序所设置的规则放置在这个自定义链中，但是自定义链接不能直接使用，只能被某个默认的链当做动作去调用才能起作用。
+
+自定义链就是一段比较”短”的链子，这条”短”链子上的规则都是针对某个应用程序制定的，但是这条短的链子并不能直接使用，而是需要”焊接”在iptables默认定义链子上，才能被IPtables使用，这就是为什么默认定义的”链”需要把”自定义链”当做”动作”去引用的原因。
+
+## 数据经过防火墙的流程
+---
+
+<img width="1012" height="533" alt="image" src="https://github.com/user-attachments/assets/a749bf92-5d00-4cb6-8487-e597a44467d4" />
+
+
+将经常用到的对应关系重新写在此处，方便对应图例查看。
+
+
+链的规则存放于哪些表中（从链到表的对应关系）：
+
+PREROUTING   的规则可以存在于：raw表，mangle表，nat表。
+
+INPUT        的规则可以存在于：mangle表，filter表，（centos7中还有nat表，centos6中没有）。
+
+FORWARD      的规则可以存在于：mangle表，filter表。
+
+OUTPUT       的规则可以存在于：raw表mangle表，nat表，filter表。
+
+POSTROUTING  的规则可以存在于：mangle表，nat表。
+
+ 
+表中的规则可以被哪些链使用（从表到链的对应关系）：
+
+raw     表中的规则可以被哪些链使用：PREROUTING，OUTPUT
+
+mangle  表中的规则可以被哪些链使用：PREROUTING，INPUT，FORWARD，OUTPUT，POSTROUTING
+
+nat     表中的规则可以被哪些链使用：PREROUTING，OUTPUT，POSTROUTING（centos7中还有INPUT，centos6中没有）
+
+filter  表中的规则可以被哪些链使用：INPUT，FORWARD，OUTPUT
+
+下图中nat表在centos7中的情况就不再标明。
+
+ 
+## 规则的概念
+---
+
+规则：根据指定的匹配条件来尝试匹配每个流经此处的报文，一旦匹配成功，则由规则后面指定的处理动作进行处理；
+
+通俗的解释一下什么是iptables的规则，之前打过一个比方，每条”链”都是一个”关卡”，每个通过这个”关卡”的报文都要匹配这个关卡上的规则，如果匹配，则对报文进行对应的处理。
+
+> 比如说，你我二人此刻就好像两个”报文”，你我二人此刻都要入关，可是城主有命，只有器宇轩昂的人才能入关，不符合此条件的人不能入关，
+>
+> 于是守关将士按照城主制定的”规则”，开始打量你我二人，最终，你顺利入关了，而我已被拒之门外，
+>
+> 因为你符合”器宇轩昂”的标准，所以把你”放行”了，而我不符合标准，所以没有被放行，
+>
+> 其实，”器宇轩昂”就是一种”匹配条件”，”放行”就是一种”动作”，”匹配条件”与”动作”组成了规则。
+
+
+### 规则由匹配条件和处理动作组成。
+
+
+匹配条件 : 匹配条件分为基本匹配条件与扩展匹配条件
+
+基本匹配条件：
+
+源地址Source IP，目标地址 Destination IP
+
+上述内容都可以作为基本匹配条件。
+
+扩展匹配条件：
+
+除上述的条件可以用于匹配，还有很多其他的条件可以用于匹配，这些条件泛称为扩展条件，这些扩展条件其实也是netfilter中的一部分，只是以模块的形式存在，想要使用这些条件，则需要依赖对应的扩展模块。
+
+源端口Source Port, 目标端口Destination Port
+
+上述内容都可以作为扩展匹配条件
+
+**处理动作**
+
+处理动作在iptables中被称为target（这样说并不准确，暂且这样称呼），动作也可以分为基本动作和扩展动作。
+
+此处列出一些常用的动作：
+
+ACCEPT：允许数据包通过。
+
+DROP：直接丢弃数据包，不给任何回应信息，这时候客户端会感觉自己的请求泥牛入海了，过了超时时间才会有反应。
+
+REJECT：拒绝数据包通过，必要时会给数据发送端一个响应的信息，客户端刚请求就会收到拒绝的信息。
+
+SNAT：源地址转换，解决内网用户用同一个公网地址上网的问题。
+
+MASQUERADE：是SNAT的一种特殊形式，适用于动态的、临时会变的ip上。
+
+DNAT：目标地址转换。
+
+REDIRECT：在本机做端口映射。
+
+LOG：在/var/log/messages文件中记录日志信息，然后将数据包传递给下一条规则，除记录外不对数据包做任何其他操作，仍然让下一条规则去匹配。
+
