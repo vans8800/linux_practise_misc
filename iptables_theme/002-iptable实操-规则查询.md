@@ -66,44 +66,109 @@ Chain INPUT (policy ACCEPT)
 target             prot opt  source               destination
 KUBE-ROUTER-INPUT  all  --   anywhere             anywhere             /* kube-router netpol - 4IA2OSFRMVNDXBVV */
 KUBE-FIREWALL      all  --   anywhere             anywhere
+```
+
+#### 链的基本信息​​
+​​
+链名称​​：INPUT
+​​所属表​​：filter（默认过滤表）
+​​默认策略​​：ACCEPT（未匹配规则时允许流量通过）
+​​规则数量​​：2 条（KUBE-ROUTER-INPUT和 KUBE-FIREWALL）
+​​
+**规则解析​​**
+
+1. ​​KUBE-ROUTER-INPUT规则​​
+​​作用​​：这是由 kube-router组件注入的规则，用于实现 Kubernetes 网络策略（Network Policies）。
+​​匹配条件​​：
+​​协议​​：所有（all）
+​​源地址​​：任意（anywhere）
+​​目标地址​​：任意（anywhere）
+​​功能​​：
+根据 Kubernetes 网络策略动态控制 Pod 之间的入站流量。例如，限制特定命名空间或 Pod 的访问权限。
+若流量不符合策略（如未授权的访问），可能触发丢弃或拒绝动作（需结合具体策略配置）。
+
+2. ​​KUBE-FIREWALL规则​​
+​​作用​​：这是 Kubernetes 的默认防火墙规则，由 kube-proxy或 kube-router维护。
+​​匹配条件​​：
+​​协议​​：所有（all）
+​​源地址​​：任意（anywhere）
+​​目标地址​​：任意（anywhere）
+​​功能​​：
+实现集群内部的流量过滤，例如阻止未标记的流量或异常连接。
+可能与其他规则链（如 KUBE-SERVICES）联动，确保只有合法流量进入本机。
+​​
+
+#### 工作流程
+​​
+​​流量进入本机​​：所有目标地址为本机的数据包首先进入 INPUT链。
+
+​​规则匹配​​：
+
+- 先匹配 KUBE-ROUTER-INPUT，根据 Kubernetes 网络策略决定是否允许流量。
+
+- 再匹配 KUBE-FIREWALL，执行通用防火墙检查（如丢弃恶意流量）。
+​​
+- 默认策略​​：若未匹配任何规则，默认允许流量通过（policy ACCEPT）。
+
+####  ​​实际应用场景​​
+
+- ​​Kubernetes 网络策略​​：通过 KUBE-ROUTER-INPUT实现 Pod 间的细粒度访问控制（如仅允许特定命名空间的流量）。
+​​
+- 安全加固​​：KUBE-FIREWALL可用于阻止未授权的入站连接（如屏蔽非业务端口）。
+​​
+- 与 kube-proxy 协同​​：在 Service 或 Ingress 场景中，INPUT链的规则可能与其他链（如 KUBE-SERVICES）配合，完成流量转发和负载均衡。
+
+#### 总结
+​​
+INPUT链是 iptables中控制入站流量的核心环节，结合 Kubernetes 的 kube-router和 kube-proxy，它实现了网络策略的动态管理和安全防护。
+
+默认的 ACCEPT策略需谨慎使用，建议根据实际需求添加更严格的规则以减少攻击面。
 
 
 
+### continue
 上图中只显示filter表中INPUT链中的规则（省略-t选项默认为filter表），使用-v选项，查看出更多的、更详细的信息，示例如下。
 
 <img width="1039" height="161" alt="image" src="https://github.com/user-attachments/assets/607b56ff-0aa9-4149-be45-732910e8a76b" />
 
+使用-v选项后，iptables 展示的信息会更多:
 
+- pkts:对应规则匹配到的报文的个数。
 
-可以看到，使用-v选项后，iptables为我们展示的信息更多了，那么，这些字段都是什么意思呢？我们来总结一下，看不懂没关系，等到实际使用的时候，自然会明白，此处大概了解一下即可。
+- bytes:对应匹配到的报文包的大小总和。
 
-其实，这些字段就是规则对应的属性，说白了就是规则的各种信息，那么我们来总结一下这些字段的含义。
+- target:规则对应的target，往往表示规则对应的”动作”，即规则匹配成功后需要采取的措施。
 
-pkts:对应规则匹配到的报文的个数。
+- prot:表示规则对应的协议，是否只针对某些协议应用此规则。
 
-bytes:对应匹配到的报文包的大小总和。
+- opt:表示规则对应的选项。
 
-target:规则对应的target，往往表示规则对应的”动作”，即规则匹配成功后需要采取的措施。
+- in:表示数据包由哪个接口(网卡)流入，即从哪个网卡来。
 
-prot:表示规则对应的协议，是否只针对某些协议应用此规则。
+- out:表示数据包将由哪个接口(网卡)流出，即到哪个网卡去。
 
-opt:表示规则对应的选项。
+- source:表示规则对应的源头地址，可以是一个IP，也可以是一个网段。
 
-in:表示数据包由哪个接口(网卡)流入，即从哪个网卡来。
+- destination:表示规则对应的目标地址。可以是一个IP，也可以是一个网段。
 
-out:表示数据包将由哪个接口(网卡)流出，即到哪个网卡去。
+上图中的源地址与目标地址都为anywhere，iptables默认为我们进行了名称解析，但是在规则非常多的情况下，若进行名称解析，效率会比较低。
 
-source:表示规则对应的源头地址，可以是一个IP，也可以是一个网段。
+所以，在没有此需求的情况下，建议使用-n选项，表示不对IP地址进行名称反解，直接显示IP地址，示例如下。
 
-destination:表示规则对应的目标地址。可以是一个IP，也可以是一个网段。
+<img width="1038" height="258" alt="image" src="https://github.com/user-attachments/assets/cbd2a8ff-b68a-49ed-be46-f09e1be94623" />
 
-细心如你一定发现了，上图中的源地址与目标地址都为anywhere，看来，iptables默认为我们进行了名称解析，但是在规则非常多的情况下如果进行名称解析，效率会比较低，所以，在没有此需求的情况下，我们可以使用-n选项，表示不对IP地址进行名称反解，直接显示IP地址，示例如下。
-
-
-
-如上图所示，规则中的源地址与目标地址已经显示为IP，而非转换后的名称。
+规则中的源地址与目标地址已经显示为IP，而非转换后的名称。
 
 当然，我们也可以只查看某个链的规则，并且不让IP进行反解，这样更清晰一些，比如 iptables -nvL INPUT
+
+```bash
+[root@host1 loongson]# iptables -nvL INPUT
+Chain INPUT (policy ACCEPT 3426 packets, 1511K bytes)
+ pkts bytes target     prot opt in     out     source               destination
+26623   16M KUBE-ROUTER-INPUT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kube-router netpol - 4IA2OSFRMVNDXBVV */
+19631   15M KUBE-FIREWALL  all  --  *      *       0.0.0.0/0            0.0.0.0/0
+[root@host1 loongson]#
+````
 
 如果你习惯了查看有序号的列表，你在查看iptables表中的规则时肯定会很不爽，没有关系，满足你，使用–line-numbers即可显示规则的编号，示例如下。
 
