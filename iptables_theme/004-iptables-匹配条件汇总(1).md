@@ -64,7 +64,6 @@
 
 <img width="942" height="149" alt="image" src="https://github.com/user-attachments/assets/a6015f64-615d-4fde-8a40-a7d69a2d9500" />
 
-
 上例表示只丢弃从146发往156这个IP的报文，但是146发往101这个IP的报文并不会被丢弃。
 
 同样若不指定任何目标地址，则目标地址默认为0.0.0.0/0，同理，若不指定源地址，源地址默认为0.0.0.0/0，0.0.0.0/0表示所有IP，示例如下。
@@ -197,115 +196,94 @@ sshd服务的默认端口为22，当使用ssh工具远程连接主机时，默�
 
 上例中，隐含了”-m tcp”之意，表示使用了tcp扩展模块的–sport扩展匹配条件。
 
- 
-
 扩展匹配条件是可以取反的，同样是使用”!”进行取反，比如 “! –dport 22″，表示目标端口不是22的报文将会被匹配到。
-
- 
 
 不管是–sport还是–dsport，都能够指定一个端口范围，比如，–dport 22:25表示目标端口为22到25之间的所有端口，即22端口、23端口、24端口、25端口，示例如下
 
+<img width="995" height="133" alt="image" src="https://github.com/user-attachments/assets/35128429-641c-4eb0-b4aa-0d404ebc4c4e" />
 
+下图中第一条规则表示匹配0号到22号之间的所有端口，下图中的第二条规则表示匹配80号端口以及其以后的所有端口（直到65535）。
 
-也可以写成如下图中的模样，下图中第一条规则表示匹配0号到22号之间的所有端口，下图中的第二条规则表示匹配80号端口以及其以后的所有端口（直到65535）。
-
-
-
- 
+<img width="1059" height="176" alt="image" src="https://github.com/user-attachments/assets/c5199a08-7242-4a08-b5ff-a5e98e5bf157" />
 
 刚才聊到的两个扩展匹配条件都是tcp扩展模块的，其实，tcp扩展模块还有一个比较有用的扩展匹配条件叫做”–tcp-flags”，但是由于篇幅原因，以后再对这个扩展匹配条件进行总结。
 
- 
+借助tcp扩展模块的–sport或者–dport都可以指定一个连续的端口范围，但是无法同时指定多个离散的、不连续的端口，若想要同时指定多个离散的端口，需要借助另一个扩展模块，”multiport”模块。
 
-借助tcp扩展模块的–sport或者–dport都可以指定一个连续的端口范围，但是无法同时指定多个离散的、不连续的端口，如果想要同时指定多个离散的端口，需要借助另一个扩展模块，”multiport”模块。
+可以使用multiport模块的–sports扩展条件同时指定多个离散的源端口。
 
-我们可以使用multiport模块的–sports扩展条件同时指定多个离散的源端口。
-
-我们可以使用multiport模块的–dports扩展条件同时指定多个离散的目标端口。
+可以使用multiport模块的–dports扩展条件同时指定多个离散的目标端口。
 
 示例如下
 
-
+<img width="979" height="129" alt="image" src="https://github.com/user-attachments/assets/2168015b-411a-4815-a7ab-76242cee07b9" />
 
 上图示例表示，禁止来自146的主机上的tcp报文访问本机的22号端口、36号端口以及80号端口。
 
 上图中，”-m multiport –dports 22,36,80″表示使用了multiport扩展模块的–dports扩展条件，以同时指定了多个离散的端口，每个端口之间用逗号隔开。
 
-上图中的-m multiport是不能省略的，如果你省略了-m multiport，就相当于在没有指定扩展模块的情况下，使用了扩展条件（”–dports”），那么上例中，iptables会默认调用”-m tcp”，但是，”–dports扩展条件”并不属于”tcp扩展模块”,而是属于”multiport扩展模块”，所以，这时就会报错。
+上图中的-m multiport是不能省略的，若省略了-m multiport，就相当于在没有指定扩展模块的情况下，使用了扩展条件（”–dports”），则上例中，iptables会默认调用”-m tcp”，但是，”–dports扩展条件”并不属于”tcp扩展模块”,而是属于”multiport扩展模块”，所以，这时就会报错。
 
 综上所述，当使用–dports或者–sports这种扩展匹配条件时，必须使用-m指定模块的名称。
 
- 
-
 其实，使用multiport模块的–sports与–dpors时，也可以指定连续的端口范围，并且能够在指定连续的端口范围的同时，指定离散的端口号，示例如下。
 
+<img width="1097" height="138" alt="image" src="https://github.com/user-attachments/assets/c0a3a531-0a70-48ef-b05b-44d5c3d0e92b" />
 
-
-上例中的命令表示拒绝来自192.168.1.146的tcp报文访问当前主机的22号端口以及80到88之间的所有端口号，是不是很方便？有没有很灵活？
-
- 
+上例中的命令表示拒绝来自192.168.1.146的tcp报文访问当前主机的22号端口以及80到88之间的所有端口号。
 
 不过需要注意，multiport扩展只能用于tcp协议与udp协议，即配合-p tcp或者-p udp使用。
 
- 
+## 小结
+---
 
-再回过头看之前的概念，我想，你应该就更加明白了。
+首先要明确一点，当规则中同时存在多个匹配条件时，多个条件之间默认存在”与”的关系，即报文必须同时满足所有条件，才能被规则匹配。
 
-今天，我们只是初步的认识了扩展模块，以及扩展匹配条件，还有一些模块我们并没有总结，好饭不怕晚，后续会有对它们的总结。
+### 基本匹配条件总结
 
- 
-
-小结
-这篇文章中，我们主要总结了一些常用的”基础匹配条件”，并且初步的认识了两个”扩展模块”以及这两个扩展模块中一些常用的扩展条件，为了方便以后回顾，我们将它们总结如下。
-
- 
-
-首先我们要明确一点，当规则中同时存在多个匹配条件时，多个条件之间默认存在”与”的关系，即报文必须同时满足所有条件，才能被规则匹配。
-
- 
-
-基本匹配条件总结
 -s用于匹配报文的源地址,可以同时指定多个源地址，每个IP之间用逗号隔开，也可以指定为一个网段。
 
+```bash
 #示例如下
 iptables -t filter -I INPUT -s 192.168.1.111,192.168.1.118 -j DROP
 iptables -t filter -I INPUT -s 192.168.1.0/24 -j ACCEPT
 iptables -t filter -I INPUT ! -s 192.168.1.0/24 -j ACCEPT
- 
+ ```
 
 -d用于匹配报文的目标地址,可以同时指定多个目标地址，每个IP之间用逗号隔开，也可以指定为一个网段。
 
+```bash
 #示例如下
 iptables -t filter -I OUTPUT -d 192.168.1.111,192.168.1.118 -j DROP
 iptables -t filter -I INPUT -d 192.168.1.0/24 -j ACCEPT
 iptables -t filter -I INPUT ! -d 192.168.1.0/24 -j ACCEPT
- 
+ ```
 
 -p用于匹配报文的协议类型,可以匹配的协议类型tcp、udp、udplite、icmp、esp、ah、sctp等（centos7中还支持icmpv6、mh）。
 
+```bash
 #示例如下
 iptables -t filter -I INPUT -p tcp -s 192.168.1.146 -j ACCEPT
 iptables -t filter -I INPUT ! -p udp -s 192.168.1.146 -j ACCEPT
- 
+``` 
 
 -i用于匹配报文是从哪个网卡接口流入本机的，由于匹配条件只是用于匹配报文流入的网卡，所以在OUTPUT链与POSTROUTING链中不能使用此选项。
 
+```bash
 #示例如下
 iptables -t filter -I INPUT -p icmp -i eth4 -j DROP
 iptables -t filter -I INPUT -p icmp ! -i eth4 -j DROP
- 
+ ```
 
 -o用于匹配报文将要从哪个网卡接口流出本机，于匹配条件只是用于匹配报文流出的网卡，所以在INPUT链与PREROUTING链中不能使用此选项。
 
+```bash
 #示例如下
 iptables -t filter -I OUTPUT -p icmp -o eth4 -j DROP
 iptables -t filter -I OUTPUT -p icmp ! -o eth4 -j DROP
- 
+``` 
 
-扩展匹配条件总结
-我们来总结一下今天认识的两个扩展模块，以及其中的扩展条件（并非全部，只是这篇文章中介绍过的）
-
- 
+### 扩展匹配条件总结
 
 tcp扩展模块
 
@@ -315,13 +293,15 @@ tcp扩展模块
 
 -p tcp -m tcp –dport 用于匹配tcp协议报文的目标端口，可以使用冒号指定一个连续的端口范围
 
+
+```bash
 #示例如下
 iptables -t filter -I OUTPUT -d 192.168.1.146 -p tcp -m tcp --sport 22 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m tcp --dport 22:25 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m tcp --dport :22 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m tcp --dport 80: -j REJECT
 iptables -t filter -I OUTPUT -d 192.168.1.146 -p tcp -m tcp ! --sport 22 -j ACCEPT
- 
+ ```
 
 multiport扩展模块
 
@@ -331,14 +311,13 @@ multiport扩展模块
 
 -p udp -m multiport –dports 用于匹配报文的目标端口，可以指定离散的多个端口号，端口之间用”逗号”隔开
 
+````bash
 #示例如下
 iptables -t filter -I OUTPUT -d 192.168.1.146 -p udp -m multiport --sports 137,138 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m multiport --dports 22,80 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m multiport ! --dports 22,80 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m multiport --dports 80:88 -j REJECT
 iptables -t filter -I INPUT -s 192.168.1.146 -p tcp -m multiport --dports 22,80:88 -j REJECT
- 
-
-好吧，感谢大家稀稀拉拉的赞赏和评论，希望这篇文章中的内容能对你有所帮助。
+ ```
 
  
