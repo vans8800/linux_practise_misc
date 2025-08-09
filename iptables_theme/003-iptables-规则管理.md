@@ -148,12 +148,9 @@ num   pkts bytes target     prot opt in     out     source               destina
 
 <img width="784" height="137" alt="image" src="https://github.com/user-attachments/assets/3e6c1aa5-1b71-4ecd-84a3-c05a44b1d107" />
 
-
 假如想要删除上图中的第3条规则，则可以使用如下命令。
 
-
 <img width="732" height="133" alt="image" src="https://github.com/user-attachments/assets/fbf28f16-c9d7-4c20-a893-ca4d7dd9c47d" />
-
 
 使用-t选项指定了要操作的表（没错，省略-t默认表示操作filter表），使用-D选项表示删除指定链中的某条规则，-D INPUT 3表示删除INPUT链中的第3条规则。
 
@@ -247,23 +244,19 @@ centos6中，使用”service iptables save”命令即可保存规则，规则�
 
 <img width="720" height="253" alt="image" src="https://github.com/user-attachments/assets/2a752493-c3c5-4d1e-8a28-d7a127f4f04e" />
 
-
 如上图所示，文件中保存了filter表中每条链的默认策略，以及每条链中的规则，由于其他表中并没有设置规则，也没有使用过其他表，所以文件中只保存了filter表中的规则。
 
- 
+对规则进行了修改以后，如果想要修改永久生效，必须使用service iptables save保存规则。
 
-当我们对规则进行了修改以后，如果想要修改永久生效，必须使用service iptables save保存规则，当然，如果你误操作了规则，但是并没有保存，那么使用service iptables restart命令重启iptables以后，规则会再次回到上次保存/etc/sysconfig/iptables文件时的模样。
-
- 
+当然，如果你误操作了规则，但是并没有保存，那么使用service iptables restart命令重启iptables以后，规则会再次回到上次保存/etc/sysconfig/iptables文件时的模样。
 
 从现在开始，最好养成及时保存规则的好习惯。
 
- 
-
-centos7中，已经不再使用init风格的脚本启动服务，而是使用unit文件，所以，在centos7中已经不能再使用类似service iptables start这样的命令了，所以service iptables save也无法执行，同时，在centos7中，使用firewall替代了原来的iptables service，不过不用担心，我们只要通过yum源安装iptables与iptables-services即可（iptables一般会被默认安装，但是iptables-services在centos7中一般不会被默认安装），在centos7中安装完iptables-services后，即可像centos6中一样，通过service iptables save命令保存规则了，规则同样保存在/etc/sysconfig/iptables文件中。
+centos7中，不再使用init风格的脚本启动服务，而是使用unit文件。在centos7中，使用firewall替代了原来的iptables service。
 
 此处给出centos7中配置iptables-service的步骤
 
+```bash
 #配置好yum源以后安装iptables-service
 # yum install -y iptables-services
 #停止firewalld
@@ -274,34 +267,154 @@ centos7中，已经不再使用init风格的脚本启动服务，而是使用uni
 # systemctl start iptables
 #将iptables设置为开机自动启动，以后即可通过iptables-service控制iptables服务
 # systemctl enable iptables
- 
+ ```
 
-上述配置过程只需一次，以后即可在centos7中愉快的使用service iptables save命令保存iptables规则了。
+上述配置过程只需一次，以后即可在centos7中愉快的使用service iptables save命令保存iptables规则。
 
- 
+### 其他通用方法
 
-其他通用方法
+使用iptables-save并不能保存当前的iptables规则， 而是将”保存后的格式”输出到屏幕上。
 
-还可以使用另一种方法保存iptables规则，就是使用iptables-save命令
-
-使用iptables-save并不能保存当前的iptables规则，但是可以将当前的iptables规则以”保存后的格式”输出到屏幕上。
-
-所以，我们可以使用iptables-save命令，再配合重定向，将规则重定向到/etc/sysconfig/iptables文件中即可。
-
+```bash
 iptables-save > /etc/sysconfig/iptables
+```
 
- 
-
-我们也可以将/etc/sysconfig/iptables中的规则重新载入为当前的iptables规则，但是注意，未保存入/etc/sysconfig/iptables文件中的修改将会丢失或者被覆盖。
+将/etc/sysconfig/iptables中的规则重新载入为当前的iptables规则，但是注意，未保存入/etc/sysconfig/iptables文件中的修改将会丢失或者被覆盖。
 
 使用iptables-restore命令可以从指定文件中重载规则，示例如下
-
+```
 iptables-restore < /etc/sysconfig/iptables
+```
 
 再次提醒：重载规则时，现有规则将会被覆盖。
 
- 
+## 命令小结
+---
 
- 
+### 添加规则
 
+注意点：添加规则时，规则的顺序非常重要
+
+1. 在指定表的指定链的尾部添加一条规则，-A选项表示在对应链的末尾添加规则，省略-t选项时，表示默认操作filter表中的规则
+
+命令语法：iptables -t 表名 -A 链名 匹配条件 -j 动作
+
+```bash
+示例：iptables -t filter -A INPUT -s 192.168.1.146 -j DROP
+```
+
+2. 在指定表的指定链的首部添加一条规则，-I选型表示在对应链的开头添加规则
+
+命令语法：iptables -t 表名 -I 链名 匹配条件 -j 动作
+
+```bash
+示例：iptables -t filter -I INPUT -s 192.168.1.146 -j ACCEPT
+ ```
+
+3. 在指定表的指定链的指定位置添加一条规则
+
+命令语法：iptables -t 表名 -I 链名 规则序号 匹配条件 -j 动作
+
+```bash
+示例：iptables -t filter -I INPUT 5 -s 192.168.1.146 -j REJECT
+```
+
+4. 设置指定表的指定链的默认策略（默认动作），并非添加规则。
+
+命令语法：iptables -t 表名 -P 链名 动作
+
+```bash
+示例：iptables -t filter -P FORWARD ACCEPT
+```
+上例表示将filter表中FORWARD链的默认策略设置为ACCEPT
+
+### 删除规则
+
+注意点：如果没有保存规则，删除规则时请慎重
+
+1. 按照规则序号删除规则，删除指定表的指定链的指定规则，-D选项表示删除对应链中的规则。
+
+命令语法：iptables -t 表名 -D 链名 规则序号
+
+```bash
+
+示例：iptables -t filter -D INPUT 3
+```
+
+上述示例表示删除filter表中INPUT链中序号为3的规则。
+
+
+2. 按照具体的匹配条件与动作删除规则，删除指定表的指定链的指定规则。
+
+命令语法：iptables -t 表名 -D 链名 匹配条件 -j 动作
+
+```bash
+示例：iptables -t filter -D INPUT -s 192.168.1.146 -j DROP
+```
+
+上述示例表示删除filter表中INPUT链中源地址为192.168.1.146并且动作为DROP的规则。
+
+3. 删除指定表的指定链中的所有规则，-F选项表示清空对应链中的规则，执行时需三思。
+
+命令语法：iptables -t 表名 -F 链名
+
+```bash
+示例：iptables -t filter -F INPUT
+```
  
+4. 删除指定表中的所有规则，执行时需三思。
+
+命令语法：iptables -t 表名 -F
+
+```bash
+示例：iptables -t filter -F
+ ```
+
+### 修改规则
+
+
+注意点：如果使用-R选项修改规则中的动作，那么必须指明原规则中的原匹配条件，例如源IP，目标IP等。
+
+1. 修改指定表中指定链的指定规则，-R选项表示修改对应链中的规则，使用-R选项时要同时指定对应的链以及规则对应的序号，并且规则中原本的匹配条件不可省略。
+
+命令语法：iptables -t 表名 -R 链名 规则序号 规则原本的匹配条件 -j 动作
+
+```bash
+示例：iptables -t filter -R INPUT 3 -s 192.168.1.146 -j ACCEPT
+```bash
+
+上述示例表示修改filter表中INPUT链的第3条规则，将这条规则的动作修改为ACCEPT， -s 192.168.1.146为这条规则中原本的匹配条件。
+
+如果省略此匹配条件，修改后的规则中的源地址可能会变为0.0.0.0/0。
+
+2. 其他修改规则的方法：先通过编号删除规则，再在原编号位置添加一条规则。
+
+3. 修改指定表的指定链的默认策略（默认动作），并非修改规则，可以使用如下命令。
+
+命令语法：iptables -t 表名 -P 链名 动作
+
+```bash
+示例：iptables -t filter -P FORWARD ACCEPT
+```
+
+上例表示将filter表中FORWARD链的默认策略修改为ACCEPT
+
+### 保存规则
+
+1. 保存规则命令如下，表示将iptables规则保存至/etc/sysconfig/iptables文件中，如果对应的操作没有保存，那么当重启iptables服务以后
+
+```bash
+service iptables save
+```
+注意点：centos7中使用默认使用firewalld，如果想要使用上述命令保存规则，需要安装iptables-services，具体配置过程请回顾上文。
+
+或者使用如下方法保存规则
+
+```bash
+iptables-save > /etc/sysconfig/iptables
+```
+可以使用如下命令从指定的文件载入规则，注意：重载规则时，文件中的规则将会覆盖现有规则。
+
+```bash
+iptables-restore < /etc/sysconfig/iptables
+```
