@@ -139,42 +139,169 @@ num   pkts bytes target     prot opt in     out     source               destina
 ## 删除规则
 ---
 
-有两种办法
-
 方法一：根据规则的编号去删除规则
 
 方法二：根据具体的匹配条件与动作删除规则
 
- 
-
-那么我们先看看方法一，先查看一下filter表中INPUT链中的规则
+先查看一下filter表中INPUT链中的规则
 
 
-
-假如我们想要删除上图中的第3条规则，则可以使用如下命令。
-
+<img width="784" height="137" alt="image" src="https://github.com/user-attachments/assets/3e6c1aa5-1b71-4ecd-84a3-c05a44b1d107" />
 
 
-上例中，使用了-t选项指定了要操作的表（没错，省略-t默认表示操作filter表），使用-D选项表示删除指定链中的某条规则，-D INPUT 3表示删除INPUT链中的第3条规则。
-
- 
-
-当然，我们也可以根据具体的匹配条件与动作去删除规则，比如，删除下图中源地址为192.168.1.146，动作为ACCEPT的规则，于是，删除规则的命令如下。
+假如想要删除上图中的第3条规则，则可以使用如下命令。
 
 
+<img width="732" height="133" alt="image" src="https://github.com/user-attachments/assets/fbf28f16-c9d7-4c20-a893-ca4d7dd9c47d" />
 
-上图中，删除对应规则时，仍然使用-D选项，-D INPUT表示删除INPUT链中的规则，剩下的选项与我们添加规则时一毛一样，-s表示以对应的源地址作为匹配条件，-j ACCEPT表示对应的动作为接受，所以，上述命令表示删除INPUT链中源地址为192.168.1.146，动作为ACCEPT的规则。
 
- 
+使用-t选项指定了要操作的表（没错，省略-t默认表示操作filter表），使用-D选项表示删除指定链中的某条规则，-D INPUT 3表示删除INPUT链中的第3条规则。
 
-而删除指定表中某条链中的所有规则的命令，我们在一开始就使用到了，就是”iptables -t 表名 -F 链名”
+当然，也可以根据具体的匹配条件与动作去删除规则，比如，删除下图中源地址为192.168.1.146，动作为ACCEPT的规则:
 
--F选项为flush之意，即冲刷指定的链，即删除指定链中的所有规则，但是注意，此操作相当于删除操作，在没有保存iptables规则的情况下，请慎用。
+<img width="694" height="197" alt="image" src="https://github.com/user-attachments/assets/c8e6f253-b4c0-4f15-9f07-bb6278c0b7b3" />
 
-其实，-F选项不仅仅能清空指定链上的规则，其实它还能清空整个表中所有链上的规则，不指定链名，只指定表名即可删除表中的所有规则，命令如下
+上图中，删除对应规则时，仍然使用-D选项。
+
+- -D INPUT表示删除INPUT链中的规则
+
+- -s表示以对应的源地址作为匹配条件
+
+- -j ACCEPT表示对应的动作为接受，
+
+所以，上述命令表示删除INPUT链中源地址为192.168.1.146，动作为ACCEPT的规则。
+
+删除指定表中某条链中的所有规则的命令： ”iptables -t 表名 -F 链名”
+
+-F选项为flush之意，即冲刷指定的链，即删除指定链中的所有规则。此操作相当于删除操作，在没有保存iptables规则的情况下，请慎用。
+
+-F选项不仅仅能清空指定链上的规则，还能清空整个表中所有链上的规则，不指定链名，只指定表名即可删除表中的所有规则：
 
 iptables -t 表名 -F
 
-不过再次强调，在没有保存iptables规则时，请勿随便清空链或者表中的规则，除非你明白你在干什么。
+再次强调，在没有保存iptables规则时，请勿随便清空链或者表中的规则，除非这是你的意图。
+
+## 修改规则
+---
+
+比如，把如下规则中的动作从DROP改为REJECT，改怎么办呢？
+
+<img width="798" height="76" alt="image" src="https://github.com/user-attachments/assets/7c35ba43-d973-4895-a6a4-e489b7d824cc" />
+
+使用-R选项修改指定的链中的规则，在修改规则时指定规则对应的编号即可(有坑，慎行)，示例命令如下：
+
+<img width="765" height="117" alt="image" src="https://github.com/user-attachments/assets/53d59103-8baf-4bba-97e5-034a1bd74d3c" />
+
+- -R选项表示修改指定的链，使用-R INPUT 1表示修改INPUT链的第1条规则
+
+- -j REJECT表示将INPUT链中的第一条规则的动作修改为REJECT。
+
+**注意**
+
+上例中， -s选项以及对应的源地址不可省略，即使已经指定规则对应的编号，但是在使用-R选项修改某个规则时，必须指定规则对应的**原本**的匹配条件。
+
+若上例中的命令没有使用-s指定对应规则中原本的源地址，那么在修改完成后，规则中的源地址会自动变为0.0.0.0/0（此IP表示匹配所有网段的IP地址）
+
+而此时，-j对应的动作又为REJECT，所以在执行上述命令时如果没有指明规则原本的源地址，那么所有IP的请求都被拒绝
+
+（因为没有指定原本的源地址，当前规则的源地址自动变为0.0.0.0/0），若你正在使用ssh远程到服务器上进行iptables设置，那么你的ssh请求也将会被阻断。
+
+既然使用-R选项修改规则时，必须指明规则原本的匹配条件，那么我们则可以理解为，只能通过-R选项修改规则对应的动作。
+
+如果你真想要修改某条规则，还不如先将这条规则删除，然后在同样位置再插入一条新规则，这样更好。
+
+当然，如果你只是为了修改某条规则的动作，那么使用-R选项时，不要忘了指明规则原本对应的匹配条件。
+
+上例中，已经将规则中的动作从DROP改为了REJECT，那么DROP与REJECT有什么不同呢？
+
+从字面上理解，DROP表示丢弃，REJECT表示拒绝，REJECT好像更坚决一点，再次从146主机上向156主机上发起ping请求，看看与之前动作为DROP时有什么不同。
+
+<img width="576" height="79" alt="image" src="https://github.com/user-attachments/assets/ba17acaa-185d-4612-be17-0f280d831798" />
+
+当156主机中的iptables规则对应的动作为REJECT时，从146上进行ping操作时，直接就提示”目标不可达”，并没有像之前那样卡在那里，看来，REJECT比DROP更加”干脆”。
+
+其实，还可以修改指定链的”默认策略”，没错，就是下图中标注的默认策略。
+
+<img width="576" height="237" alt="image" src="https://github.com/user-attachments/assets/469c5120-6e1a-4806-8fd3-0a32b53332c8" />
+
+每张表的每条链中，都有自己的默认策略，也可以理解为默认”动作”。
+
+当报文没有被链中的任何规则匹配到时，或者，当链中没有任何规则时，防火墙会按照默认动作处理报文，可以修改指定链的默认策略，使用如下命令即可。
+
+<img width="576" height="239" alt="image" src="https://github.com/user-attachments/assets/376f841a-4201-47b3-b9bf-09d244dadde0" />
+
+使用-t指定要操作的表，使用-P选项指定要修改的链，上例中，-P FORWARD DROP表示将表中FORWRD链的默认策略改为DROP。
+
+## 保存规则
+---
+
+在默认的情况下，对”防火墙”所做出的修改都是”临时的”，当重启iptables服务或者重启服务器以后，添加的规则或者对规则所做出的修改都将消失。
+
+为了防止这种情况的发生，需要将规则”保存”。
+
+centos7与centos6中的情况稍微有些不同，先说centos6中怎样保存iptables规则。
+
+centos6中，使用”service iptables save”命令即可保存规则，规则默认保存在/etc/sysconfig/iptables文件。
+
+刚安装完centos6，在刚开始使用iptables时，会发现filter表中会有一些默认的规则，这些默认提供的规则其实就保存在/etc/sysconfig/iptables中：
+
+<img width="720" height="253" alt="image" src="https://github.com/user-attachments/assets/2a752493-c3c5-4d1e-8a28-d7a127f4f04e" />
+
+
+如上图所示，文件中保存了filter表中每条链的默认策略，以及每条链中的规则，由于其他表中并没有设置规则，也没有使用过其他表，所以文件中只保存了filter表中的规则。
+
+ 
+
+当我们对规则进行了修改以后，如果想要修改永久生效，必须使用service iptables save保存规则，当然，如果你误操作了规则，但是并没有保存，那么使用service iptables restart命令重启iptables以后，规则会再次回到上次保存/etc/sysconfig/iptables文件时的模样。
+
+ 
+
+从现在开始，最好养成及时保存规则的好习惯。
+
+ 
+
+centos7中，已经不再使用init风格的脚本启动服务，而是使用unit文件，所以，在centos7中已经不能再使用类似service iptables start这样的命令了，所以service iptables save也无法执行，同时，在centos7中，使用firewall替代了原来的iptables service，不过不用担心，我们只要通过yum源安装iptables与iptables-services即可（iptables一般会被默认安装，但是iptables-services在centos7中一般不会被默认安装），在centos7中安装完iptables-services后，即可像centos6中一样，通过service iptables save命令保存规则了，规则同样保存在/etc/sysconfig/iptables文件中。
+
+此处给出centos7中配置iptables-service的步骤
+
+#配置好yum源以后安装iptables-service
+# yum install -y iptables-services
+#停止firewalld
+# systemctl stop firewalld
+#禁止firewalld自动启动
+# systemctl disable firewalld
+#启动iptables
+# systemctl start iptables
+#将iptables设置为开机自动启动，以后即可通过iptables-service控制iptables服务
+# systemctl enable iptables
+ 
+
+上述配置过程只需一次，以后即可在centos7中愉快的使用service iptables save命令保存iptables规则了。
+
+ 
+
+其他通用方法
+
+还可以使用另一种方法保存iptables规则，就是使用iptables-save命令
+
+使用iptables-save并不能保存当前的iptables规则，但是可以将当前的iptables规则以”保存后的格式”输出到屏幕上。
+
+所以，我们可以使用iptables-save命令，再配合重定向，将规则重定向到/etc/sysconfig/iptables文件中即可。
+
+iptables-save > /etc/sysconfig/iptables
+
+ 
+
+我们也可以将/etc/sysconfig/iptables中的规则重新载入为当前的iptables规则，但是注意，未保存入/etc/sysconfig/iptables文件中的修改将会丢失或者被覆盖。
+
+使用iptables-restore命令可以从指定文件中重载规则，示例如下
+
+iptables-restore < /etc/sysconfig/iptables
+
+再次提醒：重载规则时，现有规则将会被覆盖。
+
+ 
+
+ 
 
  
