@@ -170,67 +170,118 @@ Chain INPUT (policy ACCEPT 3426 packets, 1511K bytes)
 [root@host1 loongson]#
 ````
 
-如果你习惯了查看有序号的列表，你在查看iptables表中的规则时肯定会很不爽，没有关系，满足你，使用–line-numbers即可显示规则的编号，示例如下。
+使用–line-numbers即可显示规则的编号，示例如下。
 
+<img width="541" height="188" alt="image" src="https://github.com/user-attachments/assets/56b032ff-d728-4e01-b9ef-6f5f06625752" />
 
 
 –line-numbers选项并没有对应的短选项，不过我们缩写成–line时，centos中的iptables也可以识别。
 
-我知道你目光如炬，你可能早就发现了，表中的每个链的后面都有一个括号，括号里面有一些信息，如下图红色标注位置，那么这些信息都代表了什么呢？我们来看看。
+```bash
+[root@host1 loongson]# iptables --line-numbers -nvL INPUT
+Chain INPUT (policy ACCEPT 1506 packets, 1642K bytes)
+num   pkts bytes target     prot opt in     out     source               destination
+1    34094   26M KUBE-ROUTER-INPUT  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kube-router netpol - 4IA2OSFRMVNDXBVV */
+2    25522   25M KUBE-FIREWALL  all  --  *      *       0.0.0.0/0            0.0.0.0/0
+[root@host1 loongson]# iptables -line -nvL INPUT
+iptables v1.8.5 (legacy): unknown option "iptables"
+Try `iptables -h' or 'iptables --help' for more information.
+[root@host1 loongson]#
+```
 
+表中的每个链的后面都有一个括号，括号里面有一些信息，如下图红色标注位置，那么这些信息都代表了什么呢？
 
+<img width="533" height="186" alt="image" src="https://github.com/user-attachments/assets/3045bd9d-aa40-4dd9-be42-7483a8af79b0" />
 
-上图中INPUT链后面的括号中包含policy ACCEPT ，0 packets，0bytes 三部分。
+INPUT链后面的括号中包含policy ACCEPT ，0 packets，0bytes 三部分。
 
-policy表示当前链的默认策略，policy ACCEPT表示上图中INPUT的链的默认动作为ACCEPT，换句话说就是，默认接受通过INPUT关卡的所有请求，所以我们在配置INPUT链的具体规则时，应该将需要拒绝的请求配置到规则中，说白了就是”黑名单”机制，默认所有人都能通过，只有指定的人不能通过，当我们把INPUT链默认动作设置为接受(ACCEPT)，就表示所有人都能通过这个关卡，此时就应该在具体的规则中指定需要拒绝的请求，就表示只有指定的人不能通过这个关卡，这就是黑名单机制，但是，你一定发现了，上图中所显示出的规则，大部分都是接受请求(ACCEPT)，并不是想象中的拒绝请求(DROP或者REJECT)，这与我们所描述的黑名单机制不符啊，按照道理来说，默认动作为接受，就应该在具体的规则中配置需要拒绝的人，但是上图中并不是这样的，之所以出现上图中的情况，是因为IPTABLES的工作机制导致到，上例其实是利用了这些”机制”，完成了所谓的”白名单”机制，并不是我们所描述的”黑名单”机制，我们此处暂时不用关注这一点，之后会进行详细的举例并解释，此处我们只要明白policy对应的动作为链的默认动作即可，或者换句话说，我们只要理解，policy为链的默认策略即可。
+- policy表示当前链的默认策略，policy ACCEPT表示上图中INPUT的链的默认动作为ACCEPT，默认接受通过INPUT关卡的所有请求.
 
-packets表示当前链（上例为INPUT链）默认策略匹配到的包的数量，0 packets表示默认策略匹配到0个包。
+    > 在配置INPUT链的具体规则时，应该将需要拒绝的请求配置到规则中，即”黑名单”机制，默认所有人都能通过，只有指定的人不能通过
+    >
+    > 当把INPUT链默认动作设置为接受(ACCEPT)，就表示所有人都能通过这个关卡，此时就应该在具体的规则中指定需要拒绝的请求，表示只有指定的人不能通过这个关卡，
+    >
+    > 上图中所显示出的规则，大部分都是接受请求(ACCEPT)，并非想象中的拒绝请求(DROP或者REJECT)，这与我们所描述的黑名单机制不符
+    >
+    > 按照道理来说，默认动作为接受，就应该在具体的规则中配置需要拒绝的人，但是上图中并不是这样的，
+    >
+    > 上图中的情况，是因为IPTABLES的工作机制导致到，上例其实是利用了这些”机制”，完成了所谓的”白名单”机制，并不是”黑名单”机制，此处暂时不用关注这一点，
+    >
+    > 之后会进行详细的举例并解释，此处只要明白policy对应的动作为链的默认动作即可，policy为链的默认策略即可。
 
-bytes表示当前链默认策略匹配到的所有包的大小总和。
+- packets表示当前链（上例为INPUT链）默认策略匹配到的包的数量，0 packets表示默认策略匹配到0个包。
 
-其实，我们可以把packets与bytes称作”计数器”，上图中的计数器记录了默认策略匹配到的报文数量与总大小，”计数器”只会在使用-v选项时，才会显示出来。
+- bytes表示当前链默认策略匹配到的所有包的大小总和。
+
+把packets与bytes称作”计数器”，上图中的计数器记录了默认策略匹配到的报文数量与总大小，”计数器”只会在使用-v选项时，才会显示出来。
 
 当被匹配到的包达到一定数量时，计数器会自动将匹配到的包的大小转换为可读性较高的单位，如下图所示。
 
+<img width="521" height="40" alt="image" src="https://github.com/user-attachments/assets/c89a737e-5314-41bf-88e7-740396612509" />
+
+若想要查看精确的计数值，而不是经过可读性优化过的计数值，可使用-x选项，表示显示精确的计数值，示例如下。
 
 
-如果你想要查看精确的计数值，而不是经过可读性优化过的计数值，那么你可以使用-x选项，表示显示精确的计数值，示例如下。
+<img width="541" height="41" alt="image" src="https://github.com/user-attachments/assets/c79db6a3-4162-4b06-a6db-1cd6a331c3fd" />
 
+每张表中的每条链都有自己的计数器，链中的每个规则也都有自己的计数器，也即每条规则对应的pkts字段与bytes字段的信息。
 
+## 命令小节
+----
 
-每张表中的每条链都有自己的计数器，链中的每个规则也都有自己的计数器，没错，就是每条规则对应的pkts字段与bytes字段的信息。
+1. iptables -t 表名 -L
 
-命令小节
-好了，我们已经会使用命令简单的查看iptables表的规则了，为了方便以后回顾，我们将上文中的相关命令总结一下。
-
-iptables -t 表名 -L
 查看对应表的所有规则，-t选项指定要操作的表，省略”-t 表名”时，默认表示操作filter表，-L表示列出规则，即查看规则。
 
-iptables -t 表名 -L 链名
+2. iptables -t 表名 -L 链名
 查看指定表的指定链中的规则。
 
-iptables -t 表名 -v -L
-查看指定表的所有规则，并且显示更详细的信息（更多字段），-v表示verbose，表示详细的，冗长的，当使用-v选项时，会显示出”计数器”的信息，由于上例中使用的选项都是短选项，所以一般简写为iptables -t 表名 -vL
+3. iptables -t 表名 -v -L
 
-iptables -t 表名 -n -L
+查看指定表的所有规则，并且显示更详细的信息（更多字段），-v表示verbose，表示详细的，冗长的，当使用-v选项时，会显示出”计数器”的信息，由于上例中使用的选项都是短选项，所以
+
+一般简写为iptables -t 表名 -vL
+
+4. iptables -t 表名 -n -L
+
 表示查看表的所有规则，并且在显示规则时，不对规则中的IP或者端口进行名称反解，-n选项表示不解析IP地址。
 
-iptables --line-numbers -t 表名 -L
+5. iptables --line-numbers -t 表名 -L
+
 表示查看表的所有规则，并且显示规则的序号，–line-numbers选项表示显示规则的序号，注意，此选项为长选项，不能与其他短选项合并，不过此选项可以简写为–line，注意，简写后仍然是两条横杠，仍然是长选项。
 
-iptables -t 表名 -v -x -L
+6. iptables -t 表名 -v -x -L
+
 表示查看表中的所有规则，并且显示更详细的信息(-v选项)，不过，计数器中的信息显示为精确的计数值，而不是显示为经过可读优化的计数值，-x选项表示显示计数器的精确值。
 
-实际使用中，为了方便，往往会将短选项进行合并，所以，如果将上述选项都糅合在一起，可以写成如下命令，此处以filter表为例。
+实际使用中，为了方便，往往会将短选项进行合并，所以，如将上述选项都糅合在一起，可以写成如下命令，此处以filter表为例。
 
-iptables --line -t filter -nvxL
+7. iptables --line -t filter -nvxL
+
 当然，也可以只查看某张表中的某条链，此处以filter表的INPUT链为例
 
 iptables --line -t filter -nvxL INPUT
-好了，怎样使用iptables命令进行基本的查看操作，就先总结到这里吧，下一篇文章会总结iptables规则的”增、删、改”操作，直达链接如下：
 
-iptables规则管理
+```bash
+[root@host1 loongson]# iptables --line -t nat -nvxL | head -n 20
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+num      pkts      bytes target     prot opt in     out     source               destination
+1     1962920 144083803 KUBE-SERVICES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service portals */
+2      144359  8517849 DOCKER     all  --  *      *       0.0.0.0/0            0.0.0.0/0            ADDRTYPE match dst-type LOCAL
 
-如果你是一个新手，希望这篇文章能对你有所帮助。
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+num      pkts      bytes target     prot opt in     out     source               destination
 
-快来评论、快来点赞啊~~各位亲~~快来收藏~~快来推荐啊~~么么哒~~。
+Chain OUTPUT (policy ACCEPT 9 packets, 540 bytes)
+num      pkts      bytes target     prot opt in     out     source               destination
+1     5990575 359627478 KUBE-SERVICES  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes service portals */
+2      566601 33996125 DOCKER     all  --  *      *       0.0.0.0/0           !127.0.0.0/8          ADDRTYPE match dst-type LOCAL
+
+Chain POSTROUTING (policy ACCEPT 18 packets, 1318 bytes)
+num      pkts      bytes target     prot opt in     out     source               destination
+1     7775772 493027058 KUBE-POSTROUTING  all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* kubernetes postrouting rules */
+2         154     9520 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0
+3           0        0 MASQUERADE  tcp  --  *      *       172.17.0.2           172.17.0.2           tcp dpt:2064
+4     6551495 419377147 RETURN     all  --  *      *       20.2.0.0/16          20.2.0.0/16
+5          11      660 MASQUERADE  all  --  *      *       20.2.0.0/16         !224.0.0.0/4          random-fully
+```
