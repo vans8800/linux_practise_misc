@@ -21,7 +21,9 @@ iptables 和 firewalld 是 Linux 系统中两种防火墙管理工具，二者�
 ​​
 <img width="1140" height="353" alt="image" src="https://github.com/user-attachments/assets/1de49c55-7f49-4b79-8600-2e0f2e745a54" />
 
+
 ## ​​3. 工作流程对比​​
+---
 
 ​​iptables​​
 
@@ -40,6 +42,7 @@ firewalld​​
 - 动态更新​​：通过 firewall-cmd实时生效，支持运行时切换区域或服务。
 ​​
 ## 4. 典型场景选择​​
+---
 
 ​​使用 iptables​​：
 
@@ -54,6 +57,7 @@ firewalld​​
 - 动态调整规则（如临时开放调试端口）。
 
 ## ​​5. 迁移与兼容性
+---
 ​​
 ​​规则迁移​​：
 
@@ -62,10 +66,12 @@ firewalld​​
 - 使用 firewall-cmd --runtime-to-permanent将临时规则转为永久配置。
 ​​
 兼容性​​：
+
 firewalld 兼容 iptables 语法（通过 iptables-legacy模式），但推荐优先使用 firewalld 的抽象接口。
 
 ## ​​总结​​
-​​
+​​---
+
 - iptables​​ 是底层规则工具，适合技术深度要求高的场景。
 ​​
 - firewalld​​ 是高级管理工具，适合简化运维和动态需求。
