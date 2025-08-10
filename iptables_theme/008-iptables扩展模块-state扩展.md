@@ -73,6 +73,7 @@ http://www.iptables.info/en/connection-state.html
 
 若还不放心，可以将状态为RELATED或ESTABLISHED的报文都放行，只有回应本机的报文能够通过防火墙，若是主动发送过来的新的报文，则无法通过防火墙，示例如下。
 
+<img width="745" height="154" alt="image" src="https://github.com/user-attachments/assets/b61e9bfe-95d5-488d-97eb-da476c2791e6" />
 
 当前主机IP为104，当放行ESTABLISHED与RELATED状态的包以后，并没有影响通过本机远程ssh到IP为77的主机上，但是无法从77上使用22端口主动连接到104上。
 
