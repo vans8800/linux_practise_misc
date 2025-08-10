@@ -11,7 +11,6 @@ iptables 和 firewalld 是 Linux 系统中两种防火墙管理工具，二者�
 
 - firewalld 通过动态管理 Netfilter 规则，提供更高层次的抽象（如区域、服务）。
 
-
 ​​功能互补​​：
 
 - iptables 是底层工具，适合精细化控制（如复杂 NAT 规则）。
@@ -20,9 +19,7 @@ iptables 和 firewalld 是 Linux 系统中两种防火墙管理工具，二者�
 
 ## ​​2. 核心区别​​
 ​​
-
 <img width="1140" height="353" alt="image" src="https://github.com/user-attachments/assets/1de49c55-7f49-4b79-8600-2e0f2e745a54" />
-
 
 ## ​​3. 工作流程对比​​
 
