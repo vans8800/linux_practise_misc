@@ -172,7 +172,6 @@ NetworkSettings.Networks是 Docker 容器网络配置的字段路径。​​典
 }
 ```
 
-
 ### ​​关键字段​​：
 
 - IPAddress: 容器在 Docker 网络中的 IP 地址（默认桥接网络为 172.17.0.0/16）。
@@ -246,15 +245,15 @@ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' tes
 docker inspect test1 | grep -A 10 "NetworkSettings"
 ```
 
-
 ## JSON 根对象
 ---
 
 在 Docker 的 docker inspect命令和 jq工具中，​​根对象（Root Object）​​ 是 JSON 数据结构的顶层入口，所有字段和嵌套结构均从根对象开始。以下是具体解析：
 
-​​### 1. 根对象的定义​​
+### 1. 根对象的定义​​
 
 ​​根对象​​ 是 JSON 数据的最外层对象，由 docker inspect返回的完整元数据构成。例如，运行 docker inspect test1会返回类似以下结构的 JSON：
+
 {
   "Id": "abc123",
   "Name": "test1",
@@ -265,53 +264,215 @@ docker inspect test1 | grep -A 10 "NetworkSettings"
     }
   }
 }
-此时，最外层的整个 JSON 对象就是根对象。
-​​2. 根对象的作用​​
-​​访问所有字段的起点​​无论是容器、镜像还是网络，docker inspect返回的 JSON 数据均以根对象为起点。例如：
-.表示根对象本身。
-.Id访问根对象的 Id字段。
-.NetworkSettings.Networks访问根对象下的嵌套字段。
-​​处理嵌套数据的关键​​Docker 的网络配置通常嵌套在多层结构中（如 NetworkSettings.Networks），根对象是定位这些字段的起点。
-​​3. 在 jq中使用根对象​​
-​​直接引用根对象​​在 jq过滤器中，.始终指向当前处理的 JSON 对象的根。例如：
-# 输出根对象的全部内容
-docker inspect test1 | jq '.'
-​​逐层访问嵌套字段​​通过 .连接符逐级深入：
-# 提取容器在 bridge 网络中的 IP 地址
-docker inspect test1 | jq '.[].NetworkSettings.Networks.bridge.IPAddress'
-这里的路径解析为：
-.→ 根对象
-[0](@ref)→ 根对象下的第一个容器（若有多个容器）
-.NetworkSettings→ 根对象的 NetworkSettings字段
-.Networks→ NetworkSettings的 Networks字段
-.bridge→ Networks中的 bridge网络配置
-.IPAddress→ 最终的 IP 地址。
-​​4. 常见误区​​
-​​混淆数组与对象​​如果 Networks是一个对象（键值对形式），直接使用 .Networks会返回整个对象；若需遍历其值，需用 .或 to_entries[]：
-# 遍历所有网络配置
-docker inspect test1 | jq '.[].NetworkSettings.Networks | to_entries[] | .value'
-​​多容器场景​​当检查多个容器时，jq的 []会遍历根对象数组中的每个容器：
-# 提取所有容器的 bridge 网络 IP
-docker inspect $(docker ps -aq) | jq '.[].NetworkSettings.Networks.bridge.IPAddress'
-​​5. 实际应用示例​​
-​​场景：提取容器 IP 地址​​
-# 命令
-docker inspect test1 | jq -r '.[].NetworkSettings.Networks.bridge.IPAddress'
 
-# 解析
-.[] → 遍历根对象数组（若有多个容器）
-.NetworkSettings → 根对象的 NetworkSettings 字段
-.Networks.bridge → bridge 网络的配置
-.IPAddress → 最终的 IP 地址
-​​场景：查看所有网络配置​​
+此时，最外层的整个 JSON 对象就是根对象。
+
+### ​​2. 根对象的作用
+​​
+​​访问所有字段的起点​​无论是容器、镜像还是网络，docker inspect返回的 JSON 数据均以根对象为起点。例如：
+
+- .表示根对象本身。
+
+- .Id访问根对象的 Id字段。
+
+- .NetworkSettings.Networks访问根对象下的嵌套字段。
+​​
+处理嵌套数据的关键​​Docker 的网络配置通常嵌套在多层结构中（如 NetworkSettings.Networks），根对象是定位这些字段的起点。
+
+### ​​3. 在 jq中使用根对象​​
+​
+​直接引用根对象​​在 jq过滤器中，.始终指向当前处理的 JSON 对象的根。例如：
+
+
+**输出根对象的全部内容**
+
+```bash
+docker inspect test1 | jq '.'
+```
+
+​​逐层访问嵌套字段​​通过 .连接符逐级深入：
+
+**提取容器在 bridge 网络中的 IP 地址**
+
+docker inspect test1 | jq '.[].NetworkSettings.Networks.bridge.IPAddress'
+
+这里的路径解析为：
+
+- .→ 根对象
+- [0](@ref)→ 根对象下的第一个容器（若有多个容器）
+
+  - .NetworkSettings→ 根对象的 NetworkSettings字段
+
+  - .Networks→ NetworkSettings的 Networks字段
+
+  - .bridge→ Networks中的 bridge网络配置
+
+  - .IPAddress→ 最终的 IP 地址。
+​​
+### 4. 常见误区​​
+
+
+已知信息：
+
+```json
+[root@localhost aippc]# docker inspect redis | jq '.[].NetworkSettings.Networks'
+{
+  "searxng-docker_searxng": {
+    "IPAMConfig": null,
+    "Links": null,
+    "Aliases": [
+      "redis",
+      "688fc592057f"
+    ],
+    "NetworkID": "d85178d67dd29f16e05f2db16b37ca6b37e61783a33114f4f615bd13bd2b4dc1",
+    "EndpointID": "1613cbc7a07fd87635a34420329d0e36021dd1e5460af5083646bc115d85bdab",
+    "Gateway": "172.25.0.1",
+    "IPAddress": "172.25.0.3",
+    "IPPrefixLen": 16,
+    "IPv6Gateway": "",
+    "GlobalIPv6Address": "",
+    "GlobalIPv6PrefixLen": 0,
+    "MacAddress": "02:42:ac:19:00:03",
+    "DriverOpts": null
+  }
+}
+```
+
+
+```bash
+[root@localhost aippc]# docker inspect redis | jq '.[].NetworkSettings.Networks | to_entries[]'
+{
+  "key": "searxng-docker_searxng",
+  "value": {
+    "IPAMConfig": null,
+    "Links": null,
+    "Aliases": [
+      "redis",
+      "688fc592057f"
+    ],
+    "NetworkID": "d85178d67dd29f16e05f2db16b37ca6b37e61783a33114f4f615bd13bd2b4dc1",
+    "EndpointID": "1613cbc7a07fd87635a34420329d0e36021dd1e5460af5083646bc115d85bdab",
+    "Gateway": "172.25.0.1",
+    "IPAddress": "172.25.0.3",
+    "IPPrefixLen": 16,
+    "IPv6Gateway": "",
+    "GlobalIPv6Address": "",
+    "GlobalIPv6PrefixLen": 0,
+    "MacAddress": "02:42:ac:19:00:03",
+    "DriverOpts": null
+  }
+}
+[root@localhost aippc]# docker inspect redis | jq '.[].NetworkSettings.Networks | to_entries[] | .value'
+{
+  "IPAMConfig": null,
+  "Links": null,
+  "Aliases": [
+    "redis",
+    "688fc592057f"
+  ],
+  "NetworkID": "d85178d67dd29f16e05f2db16b37ca6b37e61783a33114f4f615bd13bd2b4dc1",
+  "EndpointID": "1613cbc7a07fd87635a34420329d0e36021dd1e5460af5083646bc115d85bdab",
+  "Gateway": "172.25.0.1",
+  "IPAddress": "172.25.0.3",
+  "IPPrefixLen": 16,
+  "IPv6Gateway": "",
+  "GlobalIPv6Address": "",
+  "GlobalIPv6PrefixLen": 0,
+  "MacAddress": "02:42:ac:19:00:03",
+  "DriverOpts": null
+}
+```
+
+
+​​混淆数组与对象​​如果 Networks是一个对象（键值对形式），直接使用 .Networks会返回整个对象；若需遍历其值，需用 .或 to_entries[]：
+
+**遍历所有网络配置**
+
+```bash
+docker inspect test1 | jq '.[].NetworkSettings.Networks | to_entries[] | .value'
+```
+
+多容器场景​​当检查多个容器时，jq的 []会遍历根对象数组中的每个容器：提取所有容器的 bridge 网络 IP
+
+```bash
+docker inspect $(docker ps -aq) | jq '.[].NetworkSettings.Networks.bridge.IPAddress'
+```
+
+### 5. 实际应用示例​​
+
+
+​​场景1 ：提取容器 IP 地址​​
+
+**命令**
+
+```bash
+docker inspect test1 | jq -r '.[].NetworkSettings.Networks.bridge.IPAddress'
+```
+
+**解析**
+
+- .[] → 遍历根对象数组（若有多个容器）
+
+- .NetworkSettings → 根对象的 NetworkSettings 字段
+
+- .Networks.bridge → bridge 网络的配置
+
+- .IPAddress → 最终的 IP 地址
+
+​​场景2 ：查看所有网络配置​​
+
+```bash
 docker inspect test1 | jq '.NetworkSettings.Networks'
+```
+
+```bash
+
 # 输出：
 {
   "bridge": { ... },
   "custom_network": { ... }
 }
-​​总结​​
-​​根对象是 JSON 数据的入口​​，所有字段均从根对象开始访问。
-在 jq中，.表示根对象，通过 .连接符可逐层提取嵌套字段。
-理解根对象的结构对解析复杂 JSON（如 Docker 网络配置）至关重要。
+```
+
+场景3： 提起IP地址
+
+```bash
+[root@localhost aippc]# docker inspect redis | jq -r '.[].NetworkSettings.Networks | to_entries[]'
+{
+  "key": "searxng-docker_searxng",
+  "value": {
+    "IPAMConfig": null,
+    "Links": null,
+    "Aliases": [
+      "redis",
+      "688fc592057f"
+    ],
+    "NetworkID": "d85178d67dd29f16e05f2db16b37ca6b37e61783a33114f4f615bd13bd2b4dc1",
+    "EndpointID": "1613cbc7a07fd87635a34420329d0e36021dd1e5460af5083646bc115d85bdab",
+    "Gateway": "172.25.0.1",
+    "IPAddress": "172.25.0.3",
+    "IPPrefixLen": 16,
+    "IPv6Gateway": "",
+    "GlobalIPv6Address": "",
+    "GlobalIPv6PrefixLen": 0,
+    "MacAddress": "02:42:ac:19:00:03",
+    "DriverOpts": null
+  }
+}
+```
+
+```bash
+[root@localhost aippc]# docker inspect redis | jq  '.[].NetworkSettings.Networks | to_entries[].value.IPAddress'
+"172.25.0.3"
+[root@localhost aippc]# docker inspect redis | jq  -r '.[].NetworkSettings.Networks | to_entries[].value.IPAddress'
+172.25.0.3
+```
+
+### ​​总结​
+​
+- ​​根对象是 JSON 数据的入口​​，所有字段均从根对象开始访问。
+
+- 在 jq中，.表示根对象，通过 .连接符可逐层提取嵌套字段。
+
+- 理解根对象的结构对解析复杂 JSON（如 Docker 网络配置）至关重要。
 
