@@ -922,11 +922,11 @@ docker network create test_net -d bridge -o com.docker.network.bridge.name=test_
 宿主机
 |
 ├── 网桥设备: test_bridge (虚拟设备)
-|
+    |
 │   ├── 子网: 172.18.0.0/16
-|
+    |
 │   ├── 网关: 172.18.0.1 (指向宿主机物理网卡或 NAT)
-|
+    |
 │   └── 容器接口: veth pair (如 veth025eb04)
 |
 └── 其他网络设备: docker0 (默认桥接网桥)
