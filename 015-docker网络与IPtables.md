@@ -1,4 +1,4 @@
-<img width="459" height="372" alt="image" src="https://github.com/user-attachments/assets/67a1c316-3d31-4364-a998-f4db33721f6b" />## 建议提前阅读
+## 建议提前阅读
 
 一、如果你对iptables不了解，建议先阅读博客中的iptables系列文章: https://www.zsythink.net/archives/tag/iptables
 
