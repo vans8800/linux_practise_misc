@@ -476,3 +476,59 @@ docker inspect test1 | jq '.NetworkSettings.Networks'
 
 - 理解根对象的结构对解析复杂 JSON（如 Docker 网络配置）至关重要。
 
+
+
+## JSON to_entries 和 with_entries
+---
+
+to_entries是 jq中的一个核心函数，其作用是将 ​​对象（Object）转换为键值对数组（Array of Key-Value Pairs）​​，从而简化对嵌套 JSON 数据的遍历和操作。以下是具体解析：
+
+​​### 核心功能​
+​
+​​输入对象​​：假设存在如下 JSON 对象：
+{
+  "network1": { "ip": "172.18.0.3", "gateway": "172.18.0.1" },
+  "network2": { "ip": "10.0.0.2", "gateway": "10.0.0.1" }
+}
+​​输出结果​​：
+[
+  { "key": "network1", "value": { "ip": "172.18.0.3", "gateway": "172.18.0.1" } },
+  { "key": "network2", "value": { "ip": "10.0.0.2", "gateway": "10.0.0.1" } }
+]
+每个元素包含 key（原对象的键）和 value（原对象的值）。
+​​2. 在 Docker 网络信息中的应用​​
+在用户之前的命令中，Networks字段的结构是对象（键为网络名称，值为网络配置），例如：
+
+"Networks": {
+  "searxng-docker_searxng": { "IPAddress": "172.25.0.3", ... },
+  "bridge": { "IPAddress": "172.17.0.2", ... }
+}
+直接使用 .Networks.IPAddress会失败，因为 Networks是对象而非数组。
+
+通过 to_entries[]将其转换为数组后，可遍历每个网络配置：
+
+jq -r '.Networks | to_entries[] | .value.IPAddress'
+输出：
+
+172.25.0.3
+172.17.0.2
+​​3. 与 with_entries的区别​​
+​​to_entries​​：仅将对象转换为键值对数组。
+​​with_entries​​：在转换的基础上允许对键或值进行修改，例如重命名键：
+jq 'with_entries(.key |= "new_" + .)'  # 将键前缀添加 "new_"
+​​4. 典型使用场景​​
+场景 1：遍历对象的所有值
+# 提取所有网络配置的 IP 地址
+jq -r '.Networks | to_entries[] | .value.IPAddress'
+场景 2：过滤特定键值对
+# 仅显示网关为 172.25.0.1 的网络
+jq -r '.Networks | to_entries[] | select(.value.Gateway == "172.25.0.1")'
+场景 3：合并多个对象
+# 合并两个对象的所有键值对
+jq -s 'add' obj1.json obj2.json
+​​5. 为什么需要 to_entries？​​
+​​JSON 结构限制​​：JSON 对象的键是无序的，且无法直接通过索引访问。
+​​遍历需求​​：jq的 []运算符对数组有效，对对象需先转换为数组。
+​​动态键处理​​：当键名未知或动态变化时（如 Docker 网络名称），to_entries提供了统一处理方式。
+​​总结​​
+to_entries是处理 JSON 对象的关键工具，通过将对象转换为键值对数组，使开发者能灵活遍历、过滤和操作嵌套数据。在 Docker 网络配置分析中，它解决了动态网络名称导致的路径访问难题。
