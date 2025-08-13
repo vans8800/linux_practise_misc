@@ -509,7 +509,9 @@ Chain DOCKER-ISOLATION-STAGE-2 (2 references)
 查看nat表的POSTROUTING链，规则如下
 ```bash
 [root@cos7-1 ~]# iptables -t nat -nvL POSTROUTING
+
 Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+
  pkts bytes target     prot opt in     out     source               destination         
     0     0 MASQUERADE  all  --  *      !docker0  172.17.0.0/16        0.0.0.0/0           
     0     0 MASQUERADE  all  --  *      !test_bridge  172.18.0.0/16        0.0.0.0/0
@@ -546,8 +548,10 @@ docker run --name nginx-demo -itd --network test_net --ip 172.18.0.66 -p 10.211.
 执行上述命令后，查看iptables的nat表，会发现，在自定义链DOCKER链中，多了一条DNAT规则
 
 [root@cos7-1 ~]# iptables -t nat -nvL DOCKER
+
 Chain DOCKER (2 references)
- pkts bytes target     prot opt in     out     source               destination         
+
+pkts bytes target     prot opt in     out     source               destination         
     0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
     0     0 RETURN     all  --  test_bridge *       0.0.0.0/0            0.0.0.0/0           
     0     0 DNAT       tcp  --  !test_bridge *       0.0.0.0/0            10.211.55.11         tcp dpt:8080 to:172.18.0.66:80
@@ -561,6 +565,7 @@ Chain DOCKER (2 references)
 
 ```bash
 [root@cos7-1 ~]# ss -tnl
+
 State      Recv-Q Send-Q                                   Local Address:Port                                                  Peer Address:Port              
 LISTEN     0      4096                                      10.211.55.11:8080                                                             *:*                  
 LISTEN     0      128                                                  *:22                                                               *:*                  
@@ -576,6 +581,7 @@ LISTEN     0      100                                              [::1]:25     
 [root@cos7-1 ~]# iptables -t nat -A DOCKER -p tcp ! -i test_bridge -d 10.211.55.11 --dport 8081 -j DNAT --to-destination 172.18.0.66:80
 [root@cos7-1 ~]# 
 [root@cos7-1 ~]# iptables -t nat -nvL DOCKER
+
 Chain DOCKER (2 references)
  pkts bytes target     prot opt in     out     source               destination         
     0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
