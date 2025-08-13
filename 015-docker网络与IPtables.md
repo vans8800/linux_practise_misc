@@ -547,6 +547,7 @@ docker run --name nginx-demo -itd --network test_net --ip 172.18.0.66 -p 10.211.
 
 执行上述命令后，查看iptables的nat表，会发现，在自定义链DOCKER链中，多了一条DNAT规则
 
+```bash
 [root@cos7-1 ~]# iptables -t nat -nvL DOCKER
 
 Chain DOCKER (2 references)
@@ -555,7 +556,7 @@ pkts bytes target     prot opt in     out     source               destination
     0     0 RETURN     all  --  docker0 *       0.0.0.0/0            0.0.0.0/0           
     0     0 RETURN     all  --  test_bridge *       0.0.0.0/0            0.0.0.0/0           
     0     0 DNAT       tcp  --  !test_bridge *       0.0.0.0/0            10.211.55.11         tcp dpt:8080 to:172.18.0.66:80
-
+```
 
 当访问宿主机IP10.211.55.11的8080端口时，相当于访问172.18.0.66的80端口，172.18.0.66正是指定的容器的IP地址.
 
