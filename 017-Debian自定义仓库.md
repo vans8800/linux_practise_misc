@@ -61,3 +61,6 @@ apt list mypackage-1.0
 ```bash
 sudo apt-get install mypackage-1.0
 ```
+### 目录结构说明
+
+<img width="1249" height="240" alt="image" src="https://github.com/user-attachments/assets/abcd8d42-8768-4693-8f7a-b0247bd9a2c6" />
