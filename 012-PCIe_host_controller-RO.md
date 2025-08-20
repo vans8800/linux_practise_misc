@@ -136,9 +136,7 @@ sudo apt install devmem2
 
 通过 devmem 直接读取 PCIe 寄存器（假设你知道对应的内存地址）：
 
-
 devmem 0x<物理内存地址> 32
-
 
 注：这种方法需要你对设备的物理内存地址有较高的了解，通常不推荐用在常规 PCIe 寄存器访问中。
 
@@ -148,8 +146,9 @@ Linux 的 /sys 文件系统提供了与设备相关的信息，可以通过该�
 
 访问 PCIe 设备的配置信息：
 
+```bash
 cat /sys/bus/pci/devices/0000:0a:10.0/config
-
+```
 
 但需要注意的是，这只能用于读取信息，不能直接用来修改寄存器值。
 
@@ -157,7 +156,7 @@ cat /sys/bus/pci/devices/0000:0a:10.0/config
 
 如果你有开发背景，或者需要编写自定义工具，可以通过 ioctl 系统调用直接与设备的 PCIe 寄存器进行交互。这需要编写 C 程序，使用 pci_ioctl 来访问和操作 PCI 设备。
 
-总结：
+### 总结：
 
 lspci + setpci 是最常用的工具来读取和设置 PCIe 桥寄存器值。
 
