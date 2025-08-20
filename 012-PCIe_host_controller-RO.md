@@ -638,3 +638,4 @@ sudo setpci -s 0b:00.0 CAP_MSI+0x02.W=0001:0001
 ```bash
 lspci -s 0b:00.0 -vvv | grep -E "DevCtl|MSI:"
 ```
+2025年08月20日 仓库无法Add file.
