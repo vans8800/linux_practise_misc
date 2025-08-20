@@ -471,3 +471,166 @@ lspci -s 0b:00.0 -vvv
 不同平台可能对 MRRS > 512B 有限制（例如你之前遇到 can't set MRRS 4096 的报错）。
 
 如果要 开机自动设置，可以写一个 udev rule 或者 systemd service 脚本，在 PCI 设备出现时执行 setpci。
+
+## 扩展PCIE 配置空间解析
+---
+
+```bash
+[root@localhost aipc]# sudo setpci -s 0b:00.0 0x00.L
+abcd16c3
+[root@localhost aipc]# sudo lspci -s 0b:00.0 -xxx
+0b:00.0 Non-VGA unclassified device: Synopsys, Inc. DWC_usb3 / PCIe bridge (rev 01)
+00: c3 16 cd ab 06 00 11 08 01 00 00 00 00 00 00 00
+10: 04 00 00 31 00 00 00 00 0c 00 00 17 80 00 00 00
+20: 0c 00 00 16 80 00 00 00 00 00 00 00 00 00 00 00
+30: 00 00 ff ff 40 00 00 00 00 00 00 00 40 01 00 00
+40: 01 50 f3 df 08 00 00 00 00 00 00 00 00 00 00 00
+50: 05 70 85 02 00 00 00 00 00 00 00 00 00 00 00 00
+60: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+70: 10 d0 02 04 e5 8f 00 10 90 29 19 00 44 3c 07 00
+80: 00 00 44 10 00 00 00 00 00 00 00 00 00 00 00 00
+90: 00 00 00 00 1f 08 01 80 00 00 00 00 1e 00 80 81
+a0: 04 00 1f 01 00 00 00 00 00 00 00 00 00 00 00 00
+b0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+c0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+d0: 03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+e0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+f0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+````
+
+### ① setpci 读取 Vendor/Device ID
+
+```bash
+sudo setpci -s 0b:00.0 0x00.L
+abcd16c3
+```
+
+0x00.L 代表配置空间 offset 0x00，读取 32-bit 值。
+
+输出 abcd16c3，解码为：
+
+Vendor ID = 0x16c3 （Synopsys）
+
+Device ID = 0xabcd （自定义 IP block？）
+
+这跟 lspci 输出一致：
+```bash
+Synopsys, Inc. DWC_usb3 / PCIe bridge
+```
+
+### ② 配置空间布局解析
+
+00: c3 16 cd ab 06 00 11 08 01 00 00 00 00 00 00 00
+
+
+00h–01h = Vendor ID = 0x16c3
+
+02h–03h = Device ID = 0xabcd
+
+04h–05h = Command = 0x0006 → Bus Master + Memory Enable
+
+06h–07h = Status = 0x0811
+
+08h = Revision ID = 0x01
+
+09h = ProgIF = 0x00
+
+0Ah = SubClass = 0x00
+
+0Bh = BaseClass = 0x00 → “Unclassified device (PCI bridge-like)”
+
+### ③ Capability List
+
+配置空间 0x34 = 0x40，说明 Capabilities list 指针在 offset 0x40。我们可以链表方式解析：
+
+0x40 = 0x01 → PCI Power Management (PM) capability
+
+0x50 = 0x05 → MSI capability
+
+0x70 = 0x10 → PCI Express capability
+
+### ④ 关键扩展寄存器
+
+MSI Capability (0x50)
+
+50: 05 70 85 02 ...
+
+Cap ID = 0x05 (MSI)
+
+Next Cap = 0x70
+
+Message Control = 0x0285
+
+MSI Enable 位 (bit 0) 目前是 0 → MSI 未启用
+
+👉 可以用：
+
+```bash
+sudo setpci -s 0b:00.0 CAP_MSI+0x02.W=0001:0001
+```
+
+来打开 MSI。
+
+```bash
+PCIe Capability (0x70)
+
+70: 10 d0 02 04 e5 8f 00 10 ...
+
+Cap ID = 0x10 (PCI Express)
+
+Next Cap = 0xd0
+```
+
+Device Cap / Device Control / Link Cap / Link Control 在这里
+
+其中 Device Control (offset CAP_EXP+0x08) 是我们关心的：
+
+MaxPayloadSize (bits [7:5])
+
+MaxReadReqSize (bits [14:12])
+
+👉 可以用：
+
+** 设置 MaxPayload = 512B (010)
+
+```bash
+sudo setpci -s 0b:00.0 CAP_EXP+0x08.W=0200:00E0
+```
+
+** 设置 MaxReadReq = 1024B (011)
+
+```bash
+sudo setpci -s 0b:00.0 CAP_EXP+0x08.W=3000:7000
+```
+
+### ⑤ 总结（对 0b:00.0 的关键操作命令）
+
+** 查看 Vendor/Device ID
+
+```bash
+sudo setpci -s 0b:00.0 0x00.L
+```
+
+** 设置 MaxPayload = 512B
+
+```bash
+sudo setpci -s 0b:00.0 CAP_EXP+0x08.W=0200:00E0
+```
+
+** 设置 MaxReadReq = 1024B
+
+```bash
+sudo setpci -s 0b:00.0 CAP_EXP+0x08.W=3000:7000
+````
+
+** 启用 MSI
+
+```bash
+sudo setpci -s 0b:00.0 CAP_MSI+0x02.W=0001:0001
+```
+** 验证结果
+
+```bash
+lspci -s 0b:00.0 -vvv | grep -E "DevCtl|MSI:"
+```
