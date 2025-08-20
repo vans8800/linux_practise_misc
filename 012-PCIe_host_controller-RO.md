@@ -93,7 +93,6 @@ setpci -s 0a:10.0 <寄存器地址>
 
 setpci -s 0a:10.0 10.w
 
-
 设置 PCIe 桥的寄存器值：
 通过 setpci 设置 PCI 寄存器的值（需要管理员权限）：
 
