@@ -447,13 +447,13 @@ bit[0] = MSI Enable。
 
 👉 示例：
 
-# 读取 MSI 控制寄存器
+** 读取 MSI 控制寄存器
 sudo setpci -s 0b:00.0 CAP_MSI+0x02.W
 
-# 开启 MSI
+** 开启 MSI
 sudo setpci -s 0b:00.0 CAP_MSI+0x02.W=0001:0001
 
-# 关闭 MSI
+** 关闭 MSI
 
 sudo setpci -s 0b:00.0 CAP_MSI+0x02.W=0000:0001
 
