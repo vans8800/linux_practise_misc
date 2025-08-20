@@ -403,10 +403,10 @@ bit[7:5] 表示 MPS（MaxPayload Size）。
 
 👉 示例（假设 PCIe Capabilities 在 0x50，那么 DevCtl = 0x58）：
 
-# 设置 MPS = 512B
+**设置 MPS = 512B
 sudo setpci -s 0b:00.0 CAP_EXP+0x08.W=0200:00E0
 
-# 设置 MPS = 2048B
+**设置 MPS = 2048B
 sudo setpci -s 0b:00.0 CAP_EXP+0x08.W=0800:00E0
 
 
