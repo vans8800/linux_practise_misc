@@ -91,51 +91,58 @@ setpci -s 0a:10.0 <寄存器地址>
 
 例如，读取设备的 0x10 寄存器（通常用于基地址寄存器）：
 
+```bash
 setpci -s 0a:10.0 10.w
+```
 
 设置 PCIe 桥的寄存器值：
+
 通过 setpci 设置 PCI 寄存器的值（需要管理员权限）：
 
 setpci -s 0a:10.0 <寄存器地址>=<值>
 
-
 例如，设置 0x10 寄存器的值：
 
+```bash
 setpci -s 0a:10.0 10.w=0x1234
-
+```
 
 注：setpci 的寄存器地址可以是 b（字节），w（字），l（双字）等，具体取决于寄存器的宽度。
 
-2. pciutils
+### 2. pciutils
 
-pciutils 包含多个工具，其中 lspci 和 setpci 都属于该工具集。你可以通过安装和使用这些工具来进行更复杂的 PCIe 设备操作。
+pciutils 包含多个工具，其中 lspci 和 setpci 都属于该工具集。
 
 安装 pciutils（如果尚未安装）：
 
+```bash
 sudo apt install pciutils   # Debian/Ubuntu
 sudo yum install pciutils   # CentOS/RHEL
+```
 
-3. pciconf (FreeBSD 或类似系统)：
+### 3. pciconf (FreeBSD 或类似系统)：
 
 在 FreeBSD 或某些类似的系统上，可以使用 pciconf 来读取和设置 PCI 设备的寄存器，但这在 Linux 上通常不可用。
 
-4. 通过 devmem 直接访问内存地址：
+### 4. 通过 devmem 直接访问内存地址：
 
 devmem 允许你直接访问系统的物理内存和 I/O 地址，可以用于直接操作 PCIe 地址空间。需要管理员权限。
 
 安装 devmem（在某些系统上可能需要额外安装）：
 
+```bash
 sudo apt install devmem2
-
+```
 
 通过 devmem 直接读取 PCIe 寄存器（假设你知道对应的内存地址）：
+
 
 devmem 0x<物理内存地址> 32
 
 
 注：这种方法需要你对设备的物理内存地址有较高的了解，通常不推荐用在常规 PCIe 寄存器访问中。
 
-5. /sys 文件系统（仅限部分操作）
+### 5. /sys 文件系统（仅限部分操作）
 
 Linux 的 /sys 文件系统提供了与设备相关的信息，可以通过该系统访问一些寄存器和状态信息。例如，PCIe 设备的 config 寄存器信息可能会暴露在 /sys 下，但这通常是受限的，具体取决于设备和内核配置。
 
@@ -146,7 +153,7 @@ cat /sys/bus/pci/devices/0000:0a:10.0/config
 
 但需要注意的是，这只能用于读取信息，不能直接用来修改寄存器值。
 
-6. poking 通过 ioctl 系统调用
+### 6. poking 通过 ioctl 系统调用
 
 如果你有开发背景，或者需要编写自定义工具，可以通过 ioctl 系统调用直接与设备的 PCIe 寄存器进行交互。这需要编写 C 程序，使用 pci_ioctl 来访问和操作 PCI 设备。
 
@@ -159,8 +166,6 @@ devmem 适用于直接访问内存地址，但需要较高权限和详细的地�
 /sys 文件系统可以读取设备信息，但通常无法直接设置寄存器值。
 
 如果是日常的调试或配置，lspci 和 setpci 是最简单的工具。
-
-
 
 ## PCIE 设备信息总结
 ---
