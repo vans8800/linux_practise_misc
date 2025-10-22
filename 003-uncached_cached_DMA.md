@@ -93,7 +93,6 @@
 
 - ​​  优先 Uncached DMA​​：对实时性要求严格或数据一致性风险敏感的场景。
 
-​​-  谨慎使用 Cached DMA​​：仅在性能需求压倒一致性风险时使用，并严格遵循同步协议。
+- ​​ 谨慎使用 Cached DMA​​：仅在性能需求压倒一致性风险时使用，并严格遵循同步协议。
 
--  通过合理选择策略，可平衡性能与可靠性，避免如 Linux 内核警告 req uncached-minus, got write-back 的缓存属性冲突问题
-  
+-  通过合理选择策略，可平衡性能与可靠性，避免如 Linux 内核警告 req uncached-minus, got write-back 的缓存属性冲突问题。
