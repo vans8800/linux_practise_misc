@@ -89,6 +89,12 @@ gcc -fPIC -shared -o libexample.so example.c
    gcc -shared example.o -o libexample.so
    ```
 
-
-
  `gcc -fPIC -shared -o libexample.so example.c`是将以上两步合并的简洁形式 
+
+
+
+ ## 原文内容
+
+https://mp.weixin.qq.com/s/f11qJv3MMj8uUV61n32h2w
+
+ 
