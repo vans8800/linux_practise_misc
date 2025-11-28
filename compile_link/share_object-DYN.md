@@ -26,11 +26,9 @@ $ORIGIN不是一个由 Shell 设置的系统环境变量（如 $PATH或 $HOME）
 #### 实际应用示例
 
 假设你的项目目录结构如下，并且你在 /home/user/projects/myapp目录下执行了图片中的编译命令：
-/home/user/projects/myapp/
-├── libexample.so  (编译生成的库)
-├── example.c
-├── main.c
-└── a.out         (编译生成的可执行文件)
+
+<img width="507" height="181" alt="image" src="https://github.com/user-attachments/assets/c4d9d885-e8b9-4f06-93c8-1f9e1365a165" />
+
 当你运行 ./a.out时，动态链接器会：
 
 1. 遇到 $ORIGIN，将其解析为 a.out所在的目录，即 /home/user/projects/myapp。
