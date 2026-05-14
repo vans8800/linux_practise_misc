@@ -39,7 +39,16 @@ sduo chroot /mnt
 
 sudo dracut -f /boot/initrd.img-4.19.0-19-loongson-3 4.19.0-19-loongson-3
 
+## 更新gru
+
+sudo update-grub
+
+## 退出chroot的后续操作
 sudo exit
+
+sudo umount -R /mnt
+
+sudo reboot
 ```
 
 > [TIP]
