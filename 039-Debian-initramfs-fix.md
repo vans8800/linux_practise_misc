@@ -51,6 +51,6 @@ sudo umount -R /mnt
 sudo reboot
 ```
 
-> [TIPS]
+> [!TIPS]
 >
 > 这里使用dracut是因为chroot环境中无法apt联网使用。
