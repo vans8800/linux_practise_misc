@@ -25,6 +25,12 @@ wget -r -l inf -k -L -p -np -nd -P /保存路径/ "目标URL"
 
 - ​​-P /保存路径/​​指定本地保存路径（默认当前目录）。
 
+```diff
+- wget -r -l inf -k -L -p -np -nd -P ./ https://...
++ wget -r -l inf -k -L -p -np -P ./ https://...
+
+```
+
 
 ### ​​扩展功能​​
 
